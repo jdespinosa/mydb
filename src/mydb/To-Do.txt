@@ -1,0 +1,3 @@
+- No checking yet if field value exceeds field length limit
+- No checking if table exists before creating a new one
+- 
