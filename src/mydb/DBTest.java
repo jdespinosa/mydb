@@ -10,6 +10,7 @@ package mydb;
  * @author JDE
  * @description This tests the many functionalities of this library
  */
+
 public class DBTest {
     private final String dburl;
     private final String schemaurl;
@@ -44,19 +45,23 @@ public class DBTest {
         Recordset rs = db.getRecords(table, fields, null);
         
         //System.out.println(rs);
-        
-        
         while(rs.hasNext()){
             Record rec = rs.nextRecord();
             System.out.println(rec.getFieldValue(fields[0].getName()));
             System.out.println(rec.getFieldValue(fields[1].getName()));
-            
         }
-        
-        
     }
     
-    
+    public void deleteRecords(){
+        Database db = new Database(dburl, schemaurl);
+        String tablename = "student";
+        Table table = db.getTable(tablename);
+        FilterExpression fexpr = new FilterExpression(new FilterTerm(table.getField("id")), DBRelationalOptr.EQUAL, new FilterTerm("001-11"), null, null);
+        FilterExpression fexpr2 = new FilterExpression(new FilterTerm(table.getField("id")), DBRelationalOptr.EQUAL, new FilterTerm("002-22"), DBLogicalOptr.OR, fexpr);
+        
+        int res = db.deleteRecords(table, fexpr2);
+        System.out.println("Res: " + res);
+    }
     
     public void insertRecord(){
         Database db = new Database(dburl, schemaurl);
@@ -106,7 +111,7 @@ public class DBTest {
         // dbt.insertRecord();
         
         // dbt.updateRecords();
-        dbt.accessRecords();
+        dbt.deleteRecords();
     }
     
 }
