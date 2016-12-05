@@ -76,7 +76,7 @@ public class Schema {
             }
         }
         catch(Exception e){
-            throw new Error("Error reading Schema File");
+            throw new Error("Error reading Schema File: " + this.schema_url);
         }
     }
     

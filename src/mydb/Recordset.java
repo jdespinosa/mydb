@@ -18,7 +18,9 @@ public class Recordset <T> {
     private int row;
     private final int record_width;
     private final Schema schema;
-    private final int num_rows;
+    private  int num_rows;
+    
+    private boolean isEmpty;
     
     public Recordset(Schema schema, Table table, String raw_recordset_data, Field[] fields){
         this.table  = table;
@@ -28,6 +30,22 @@ public class Recordset <T> {
         this.record_width = getRecordWidth();
         this.schema = schema;
         this.num_rows = raw_recordset_data.length() / getRecordWidth(); // determine max rows before hand
+        
+        this.isEmpty = this.num_rows <= 0 || raw_recordset_data.trim().equals("");
+        
+        if(this.isEmpty){
+            this.num_rows = 0;
+        }
+        
+        System.out.println("RAW: " + this.isEmpty);
+    }
+    
+    public boolean isEmpty(){
+        return this.isEmpty;
+    }
+    
+    public int getRecordCount(){
+        return this.num_rows;
     }
     
     public Record nextRecord(){

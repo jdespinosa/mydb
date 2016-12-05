@@ -5,11 +5,15 @@
  */
 package mydb;
 
+import javax.swing.event.TableModelListener;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
+
 /**
  *
  * @author JDE
  */
-public class Main extends javax.swing.JFrame {
+public class Main<T> extends javax.swing.JFrame {
 
     /**
      * Creates new form Main
@@ -19,12 +23,24 @@ public class Main extends javax.swing.JFrame {
     private Schema schema;
     private String db_folder_url;
     private Table table;
+    private boolean isInitializing; 
     
     public Main() {
         initComponents();
         
+        this.isInitializing = true;
+        
         // initialize database object
         this.db_folder_url = "c:/MyDB";
+        
+         
+        // initialize database object
+        this.db = new Database(this.db_folder_url + "/db1", this.db_folder_url + "/master.schema");
+        
+        if(this.db == null){
+            System.out.println("Error connecting to database folder");
+        }
+        
         
         // populate database list
         this.cmbDB.addItem("db1");
@@ -39,6 +55,9 @@ public class Main extends javax.swing.JFrame {
         
         // hide table for now
         this.tblTable.setVisible(false);
+        
+        this.isInitializing = false;
+       
     }
 
     /**
@@ -56,6 +75,7 @@ public class Main extends javax.swing.JFrame {
         cmbTables = new javax.swing.JComboBox<>();
         jScrollPane1 = new javax.swing.JScrollPane();
         tblTable = new javax.swing.JTable();
+        lblRecCount = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -93,6 +113,8 @@ public class Main extends javax.swing.JFrame {
         ));
         jScrollPane1.setViewportView(tblTable);
 
+        lblRecCount.setText("0 Records");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -100,6 +122,7 @@ public class Main extends javax.swing.JFrame {
             .addGroup(layout.createSequentialGroup()
                 .addGap(27, 27, 27)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(lblRecCount)
                     .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 452, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -122,7 +145,9 @@ public class Main extends javax.swing.JFrame {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2)
                     .addComponent(cmbTables, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(18, 18, 18)
+                .addGap(3, 3, 3)
+                .addComponent(lblRecCount)
+                .addGap(1, 1, 1)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 266, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
@@ -136,8 +161,67 @@ public class Main extends javax.swing.JFrame {
 
     private void cmbTablesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmbTablesActionPerformed
         // TODO add your handling code here:
-        System.out.println(this.cmbTables.getSelectedItem());
-       
+        
+        if(this.isInitializing ){
+            return;
+        }
+        
+        // System.out.println(this.cmbTables.getSelectedItem());
+        if( this.cmbTables.getSelectedIndex() == -1 ){
+            return;
+        }
+        
+        // get selected table name
+        String table_name = this.cmbTables.getSelectedItem().toString();
+        System.out.println(table_name);
+        this.table = db.getTable(table_name);
+        
+        // System.out.println(this.table.getFieldNames().length);
+        
+        // get the list of fields for this table
+        String[] flds = this.table.getFieldNames();
+        
+        // show table 
+        this.tblTable.setVisible(true);
+        
+        // create a blank table model
+        DefaultTableModel dtm = new DefaultTableModel();
+        
+        // dynamically add the columns based on the field
+        for(int i=0; i<flds.length; i++){
+            dtm.addColumn(flds[i]);
+        }
+        
+        // attemp to get all the records
+        Field[] fields = new Field[flds.length];
+        for(int i=0; i<flds.length; i++){
+            fields[i] = this.table.getField(i);
+        }
+        
+        Recordset rs = db.getRecords(this.table, fields, null);
+        
+        // make sure the table is not empty before adding
+        if( rs.getRecordCount() > 0  ){ // this could also be if( !rs.isEmpty() )
+            // dynamically add rows to the table
+            while(rs.hasNext()){
+                Record rec = rs.nextRecord();
+
+                String[] vals = new String[flds.length];
+
+                for(int i=0; i<vals.length; i++){
+                    vals[i] = (String) rec.getFieldValue(flds[i]);
+                }
+
+                dtm.addRow(vals);
+            }
+        }
+        
+        // display total records
+        this.lblRecCount.setText(rs.getRecordCount() + " Record(s)");
+        
+        // apply table model
+        this.tblTable.setModel(dtm);
+        
     }//GEN-LAST:event_cmbTablesActionPerformed
 
     private void cmbTablesPropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FIRST:event_cmbTablesPropertyChange
@@ -189,6 +273,7 @@ public class Main extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JLabel lblRecCount;
     private javax.swing.JTable tblTable;
     // End of variables declaration//GEN-END:variables
 }

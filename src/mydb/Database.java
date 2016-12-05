@@ -1003,6 +1003,8 @@ public class Database {
             return null;
         }
         
+        
+        
         // get Table width
         //Table t = new Table(this.dburl + "/" + table.getName() + ".tbl", schema);
         
