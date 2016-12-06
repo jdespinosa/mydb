@@ -5,6 +5,7 @@
  */
 package mydb;
 
+import javax.swing.JOptionPane;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
@@ -24,6 +25,7 @@ public class Main<T> extends javax.swing.JFrame {
     private String db_folder_url;
     private Table table;
     private boolean isInitializing; 
+    private int editableRow;
     
     public Main() {
         initComponents();
@@ -57,6 +59,8 @@ public class Main<T> extends javax.swing.JFrame {
         this.tblTable.setVisible(false);
         this.isInitializing = false;
        
+        
+        this.editableRow = -1;   // make everything editable
     }
 
     /**
@@ -75,6 +79,8 @@ public class Main<T> extends javax.swing.JFrame {
         jScrollPane1 = new javax.swing.JScrollPane();
         tblTable = new javax.swing.JTable();
         lblRecCount = new javax.swing.JLabel();
+        cmdAdd = new javax.swing.JButton();
+        cmdUpdate = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -110,9 +116,28 @@ public class Main<T> extends javax.swing.JFrame {
                 "Title 1", "Title 2", "Title 3", "Title 4"
             }
         ));
+        tblTable.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                tblTableMouseClicked(evt);
+            }
+        });
         jScrollPane1.setViewportView(tblTable);
 
         lblRecCount.setText("0 Records");
+
+        cmdAdd.setText("Add Record");
+        cmdAdd.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cmdAddActionPerformed(evt);
+            }
+        });
+
+        cmdUpdate.setText("Update");
+        cmdUpdate.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cmdUpdateActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -120,17 +145,22 @@ public class Main<T> extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addGap(27, 27, 27)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(lblRecCount)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 452, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel1)
-                            .addComponent(jLabel2))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(cmbTables, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(cmbDB, javax.swing.GroupLayout.PREFERRED_SIZE, 166, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                        .addComponent(cmdAdd)
+                        .addGap(296, 296, 296)
+                        .addComponent(cmdUpdate))
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(lblRecCount)
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 452, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGroup(layout.createSequentialGroup()
+                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                .addComponent(jLabel1)
+                                .addComponent(jLabel2))
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                .addComponent(cmbTables, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(cmbDB, javax.swing.GroupLayout.PREFERRED_SIZE, 166, javax.swing.GroupLayout.PREFERRED_SIZE)))))
                 .addContainerGap(25, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
@@ -147,8 +177,12 @@ public class Main<T> extends javax.swing.JFrame {
                 .addGap(3, 3, 3)
                 .addComponent(lblRecCount)
                 .addGap(1, 1, 1)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 266, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 202, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(cmdAdd)
+                    .addComponent(cmdUpdate))
+                .addContainerGap(46, Short.MAX_VALUE))
         );
 
         pack();
@@ -216,12 +250,61 @@ public class Main<T> extends javax.swing.JFrame {
         // apply table model
         this.tblTable.setModel(dtm);
         
+        
+        
     }//GEN-LAST:event_cmbTablesActionPerformed
 
     private void cmbTablesPropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FIRST:event_cmbTablesPropertyChange
         // TODO add your handling code here:
          
     }//GEN-LAST:event_cmbTablesPropertyChange
+
+    private void tblTableMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblTableMouseClicked
+        // TODO add your handling code here:
+        if( this.editableRow > -1 && this.tblTable.getSelectedRow() != this.editableRow ){
+            this.tblTable.setRowSelectionInterval(this.editableRow, this.editableRow);
+        }
+        
+        
+        
+        
+    }//GEN-LAST:event_tblTableMouseClicked
+
+    private void cmdAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmdAddActionPerformed
+        // showInfoMsg("Add Record");
+        
+        // insert a blank row
+        DefaultTableModel dtm = (DefaultTableModel) this.tblTable.getModel();
+        dtm.addRow(new Object[]{});
+        
+        // auto-select/hi-light this row
+        this.tblTable.setRowSelectionInterval(this.tblTable.getRowCount()-1, this.tblTable.getRowCount()-1);
+
+        // lock other rows
+        this.editableRow = this.tblTable.getSelectedRow();
+        
+        
+    }//GEN-LAST:event_cmdAddActionPerformed
+
+    private void cmdUpdateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmdUpdateActionPerformed
+        
+        // attempt to insert record to database
+        DefaultTableModel dtm = (DefaultTableModel)this.tblTable.getModel();
+        
+        DataValue[] dv = new DataValue[tblTable.getColumnCount()];
+        
+        int row = this.editableRow;
+        for(int c=0; c<tblTable.getColumnCount(); c++){
+            String column_name = tblTable.getColumnName(c);
+            Field field = this.table.getField(column_name);
+            System.out.println("Field: " + field.getName() + " T: " + field.getDatatype());
+            Object val = db.toCorrectData(dtm.getValueAt(row, c).toString(), field);
+            System.out.println("Object: " + val + " col: " + c);
+            dv[c] = new DataValue( column_name, val);
+        }
+        
+        db.insertToTable("student", dv);
+    }//GEN-LAST:event_cmdUpdateActionPerformed
 
     /**
      * @param args the command line arguments
@@ -260,10 +343,18 @@ public class Main<T> extends javax.swing.JFrame {
             }
         });
     }
-
+    
+    public void showInfoMsg(String msg){
+        JOptionPane.showMessageDialog(null, msg, "App", JOptionPane.INFORMATION_MESSAGE);
+        
+    }
+    
+    
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JComboBox<String> cmbDB;
     private javax.swing.JComboBox<String> cmbTables;
+    private javax.swing.JButton cmdAdd;
+    private javax.swing.JButton cmdUpdate;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JScrollPane jScrollPane1;

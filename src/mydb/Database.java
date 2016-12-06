@@ -14,7 +14,7 @@ import java.io.*;
 import java.nio.*;
 import java.nio.channels.FileChannel;
 
-public class Database {
+public class Database<T> {
     private Schema schema;
     private String dburl;
     private String schemaurl;
@@ -1084,6 +1084,28 @@ public class Database {
         
         return res;
     }   
+    
+    public T toCorrectData(String val, Field field){
+        
+        switch(field.getDatatype()){
+            case "INT":
+                Integer ival = Integer.parseInt(val);
+                System.out.println("1");
+                return (T)ival;
+                
+            case "VARCHAR":
+                System.out.println("2");
+                return (T)val;
+                
+            case "DOUBLE":
+                System.out.println("3");
+                Double dval = Double.parseDouble(val);
+                return (T)dval;
+                
+        }
+        System.out.println("4");
+        return null;
+    }
     
     public boolean fieldSetUnique(Field[] fields){
         for( int i=0; i<fields.length; i++ ){
