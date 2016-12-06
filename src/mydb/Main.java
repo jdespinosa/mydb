@@ -55,7 +55,6 @@ public class Main<T> extends javax.swing.JFrame {
         
         // hide table for now
         this.tblTable.setVisible(false);
-        
         this.isInitializing = false;
        
     }
@@ -132,7 +131,7 @@ public class Main<T> extends javax.swing.JFrame {
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(cmbTables, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(cmbDB, javax.swing.GroupLayout.PREFERRED_SIZE, 166, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                .addContainerGap(70, Short.MAX_VALUE))
+                .addContainerGap(25, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -160,8 +159,6 @@ public class Main<T> extends javax.swing.JFrame {
     }//GEN-LAST:event_cmbDBActionPerformed
 
     private void cmbTablesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmbTablesActionPerformed
-        // TODO add your handling code here:
-        
         if(this.isInitializing ){
             return;
         }
@@ -175,8 +172,6 @@ public class Main<T> extends javax.swing.JFrame {
         String table_name = this.cmbTables.getSelectedItem().toString();
         System.out.println(table_name);
         this.table = db.getTable(table_name);
-        
-        // System.out.println(this.table.getFieldNames().length);
         
         // get the list of fields for this table
         String[] flds = this.table.getFieldNames();
@@ -197,7 +192,6 @@ public class Main<T> extends javax.swing.JFrame {
         for(int i=0; i<flds.length; i++){
             fields[i] = this.table.getField(i);
         }
-        
         Recordset rs = db.getRecords(this.table, fields, null);
         
         // make sure the table is not empty before adding
@@ -209,7 +203,7 @@ public class Main<T> extends javax.swing.JFrame {
                 String[] vals = new String[flds.length];
 
                 for(int i=0; i<vals.length; i++){
-                    vals[i] = (String) rec.getFieldValue(flds[i]);
+                    vals[i] = rec.getFieldValue(flds[i]).toString();
                 }
 
                 dtm.addRow(vals);
