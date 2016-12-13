@@ -156,10 +156,12 @@ public class Database<T> {
            fw.close();
            
            // delete original file
-           file.delete();
+           boolean delres = file.delete();
+           
+            System.out.println("Delete file Result: " + delres);
            
            // rename temp to table file
-           tmpFile.renameTo(file);
+            System.out.println("Rename: " + tmpFile.renameTo(file) );
         }
         catch(Exception e){
             return 3;       
@@ -480,6 +482,7 @@ public class Database<T> {
             
             // check if field name is found in the table
             if( table.getField(field_name) == null  ){
+                System.out.println("Error: Field " + field_name + " not found in Table " + table.getName());
                 return false;
             }
             
@@ -497,6 +500,7 @@ public class Database<T> {
             
             // check if field name is found in the table
             if( table.getField(field_name) == null  ){
+                System.out.println("Error: Field " + field_name + " not found in Table " + table.getName());
                 return false;
             }
             
@@ -515,38 +519,41 @@ public class Database<T> {
             case "Field,Constant":
                 // check value of constant if matches field data type
                 if( fexpr.term1.getType().equals("INT") && !fexpr.term2.getType().equals("java.lang.Integer") ){
-                    // System.out.println("FC INT");
+                    System.out.println("Error: value of Field " + fexpr.term1.getValue() + " is invalid: " + fexpr.term2.getType());
                     return false;
                 }
                 else if( fexpr.term1.getType().equals("DOUBLE") && !fexpr.term2.getType().equals("java.lang.Double") ){
                     // System.out.println("FC DOUBLE");
+                    System.out.println("Error: value of Field " + fexpr.term1.getValue() + " is invalid: " + fexpr.term2.getType());
                     return false;
                 }
                 else if( fexpr.term1.getType().equals("VARCHAR") && !fexpr.term2.getType().equals("java.lang.String") ){
                     // System.out.println("FC VARCHAR");
+                    System.out.println("Error: value of Field " + fexpr.term1.getValue() + " is invalid: " + fexpr.term2.getType());
                     return false;
                 }
                 break;
             case "Field,Field":
             case "Constant,Constant":
                 if( !fexpr.term1.getType().equals(fexpr.term2.getType()) ){
-                    // System.out.println("FF/CC");
+                    System.out.println("Error: Constant" + fexpr.term1.getValue() + " doesn't match type of Constant " + fexpr.term2.getValue() );
                     return false;
                 }
                 break;
             case "Constant,Field":
                 // check value of constant if matches field data type
                 if( fexpr.term2.getType().equals("INT") && !fexpr.term1.getType().equals("java.lang.Integer") ){
-                    // System.out.println("CF INT");
+                    System.out.println("Error: value of Field " + fexpr.term2.getValue() + " is invalid: " + fexpr.term1.getType());
                     return false;
                 }
                 else if( fexpr.term2.getType().equals("DOUBLE") && !fexpr.term1.getType().equals("java.lang.Double") ){
                     // System.out.println("CF DOUBLE");
+                    System.out.println("Error: value of Field " + fexpr.term2.getValue() + " is invalid: " + fexpr.term1.getType());
                     return false;
                 }
                 else if( fexpr.term2.getType().equals("VARCHAR") && !fexpr.term1.getType().equals("java.lang.String") ){
                     // System.out.println("CF VARCHAR");
-                    
+                    System.out.println("Error: value of Field " + fexpr.term2.getValue() + " is invalid: " + fexpr.term1.getType());
                     return false;
                 }
                 break;
@@ -555,6 +562,7 @@ public class Database<T> {
         // check if Relational Operator is valid
         if( fexpr.rop == null  ){
             // System.out.println("ROP NULL");
+            System.out.println("Error: Relational Operator is invalid or null");
             return false;
         }
         
@@ -1086,6 +1094,8 @@ public class Database<T> {
     }   
     
     public T toCorrectData(String val, Field field){
+        
+        System.out.println("field name: " + field.getName() + " type: " + field.getDatatype());
         
         switch(field.getDatatype()){
             case "INT":

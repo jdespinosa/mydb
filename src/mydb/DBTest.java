@@ -71,8 +71,7 @@ public class DBTest {
         dv[1] = new DataValue("course", "Software Engineering");
         dv[2] = new DataValue("year", 5);
         dv[3] = new DataValue("id", "001-11");
-        
-        
+                
         db.insertToTable("student", dv);
         
         dv[0] = new DataValue("name", "Mark Dominique Espinosa");

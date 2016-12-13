@@ -6,6 +6,8 @@
 package mydb;
 
 import javax.swing.JOptionPane;
+import javax.swing.event.CellEditorListener;
+import javax.swing.event.ChangeEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
@@ -26,6 +28,10 @@ public class Main<T> extends javax.swing.JFrame {
     private Table table;
     private boolean isInitializing; 
     private int editableRow;
+    private int editableCol;
+    private String origVal;
+    private String newVal;
+    private boolean isAdding;   
     
     public Main() {
         initComponents();
@@ -61,6 +67,12 @@ public class Main<T> extends javax.swing.JFrame {
        
         
         this.editableRow = -1;   // make everything editable
+        this.editableCol = -1;
+        
+        this.origVal = null;
+        this.newVal = null;
+        
+        this.isAdding = false;
     }
 
     /**
@@ -81,6 +93,8 @@ public class Main<T> extends javax.swing.JFrame {
         lblRecCount = new javax.swing.JLabel();
         cmdAdd = new javax.swing.JButton();
         cmdUpdate = new javax.swing.JButton();
+        cmdCancel = new javax.swing.JButton();
+        cmdDel = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -116,9 +130,22 @@ public class Main<T> extends javax.swing.JFrame {
                 "Title 1", "Title 2", "Title 3", "Title 4"
             }
         ));
+        tblTable.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                tblTableFocusGained(evt);
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                tblTableFocusLost(evt);
+            }
+        });
         tblTable.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 tblTableMouseClicked(evt);
+            }
+        });
+        tblTable.addPropertyChangeListener(new java.beans.PropertyChangeListener() {
+            public void propertyChange(java.beans.PropertyChangeEvent evt) {
+                tblTablePropertyChange(evt);
             }
         });
         jScrollPane1.setViewportView(tblTable);
@@ -139,6 +166,20 @@ public class Main<T> extends javax.swing.JFrame {
             }
         });
 
+        cmdCancel.setText("Cancel");
+        cmdCancel.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cmdCancelActionPerformed(evt);
+            }
+        });
+
+        cmdDel.setText("Del Record");
+        cmdDel.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cmdDelActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -148,7 +189,11 @@ public class Main<T> extends javax.swing.JFrame {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(cmdAdd)
-                        .addGap(296, 296, 296)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(cmdDel)
+                        .addGap(128, 128, 128)
+                        .addComponent(cmdCancel)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(cmdUpdate))
                     .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                         .addComponent(lblRecCount)
@@ -181,7 +226,9 @@ public class Main<T> extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(cmdAdd)
-                    .addComponent(cmdUpdate))
+                    .addComponent(cmdUpdate)
+                    .addComponent(cmdCancel)
+                    .addComponent(cmdDel))
                 .addContainerGap(46, Short.MAX_VALUE))
         );
 
@@ -250,7 +297,93 @@ public class Main<T> extends javax.swing.JFrame {
         // apply table model
         this.tblTable.setModel(dtm);
         
+        // assign a CellEditorlistener
+        CellEditorListener cel = new CellEditorListener() {
+            @Override
+            public void editingStopped(ChangeEvent ce) {
+                if( isAdding == true){
+                    return;
+                }
+                
+                if(editableCol == -1 || editableRow == -1){ // don't do anything when row and col index are invalid
+                    return;
+                }
+                
+                // throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                DefaultTableModel dtm = (DefaultTableModel) tblTable.getModel();
+                
+                // save new value to property
+                newVal = (String) dtm.getValueAt(editableRow, editableCol);
+                
+                // showInfoMsg(String.valueOf(newVal));
+                
+                // if something changed, save it to database
+                if( newVal != origVal ){
+                    // get column/field name
+                    String fieldname = dtm.getColumnName( editableCol );
+                    Field field = table.getField(fieldname);
+                    
+                    // create data values 
+                    DataValue[] dv = new DataValue[1];
+                    dv[0] = new DataValue(fieldname, db.toCorrectData(newVal,field ));
+                    
+                    // create filter expression
+                    FilterExpression[] fexpr = new FilterExpression[dtm.getColumnCount()];
+                    for( int i=0; i<fexpr.length; i++ ){
+                        // get current value col
+                        String val = (String) dtm.getValueAt(editableRow, i);
+                        Field f = table.getField(dtm.getColumnName(i));
+                        
+                        // check if current field is the one changed so you can use old value
+                        if( i == editableCol  ){
+                            val = origVal;
+                        }
+                        
+                        if( i == 0 ){
+                            
+                            fexpr[i] = new FilterExpression(new FilterTerm( table.getField(dtm.getColumnName(i))), DBRelationalOptr.EQUAL, new FilterTerm(db.toCorrectData(val, f)), null, null);
+                        }
+                        else {
+                            fexpr[i] = new FilterExpression(new FilterTerm(table.getField(dtm.getColumnName(i))), DBRelationalOptr.EQUAL, new FilterTerm(db.toCorrectData(val, f)), DBLogicalOptr.AND, fexpr[i-1]);
+                        }
+                    }
+                    
+                    
+                    // attempt to update table
+                    if( db.updateTable(table.getName(), dv, fexpr[fexpr.length-1]) == 0  ){
+                        showInfoMsg("Table updated successfully");
+                    }
+                    else {
+                        showInfoMsg("Update failed!");
+                    }
+                    
+                    // reset edit-related properties
+                    origVal = null;
+                    newVal = null;
+                    editableCol = -1;
+                    editableRow = -1;
+                    
+                    
+                    
+                }
+            }
+
+            @Override
+            public void editingCanceled(ChangeEvent ce) {
+                if( isAdding == true){
+                    return;
+                }
+                
+                // restore all value
+                DefaultTableModel dtm = (DefaultTableModel) tblTable.getModel();
+                dtm.setValueAt(origVal, editableRow, editableCol);
+                
+                // empty new value property
+                newVal = null;
+            }
+        };
         
+        this.tblTable.getDefaultEditor(String.class).addCellEditorListener(cel);
         
     }//GEN-LAST:event_cmbTablesActionPerformed
 
@@ -261,10 +394,20 @@ public class Main<T> extends javax.swing.JFrame {
 
     private void tblTableMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblTableMouseClicked
         // TODO add your handling code here:
-        if( this.editableRow > -1 && this.tblTable.getSelectedRow() != this.editableRow ){
+        if( this.editableRow > -1 && this.tblTable.getSelectedRow() != this.editableRow && this.isAdding == true ){
             this.tblTable.setRowSelectionInterval(this.editableRow, this.editableRow);
         }
         
+        if( this.tblTable.getSelectedColumn() != -1 && this.tblTable.getSelectedRow() != -1 ){
+            this.editableCol = this.tblTable.getSelectedColumn();
+            this.editableRow = this.tblTable.getSelectedRow();
+            
+            // get value at current location
+            DefaultTableModel dtm = (DefaultTableModel) this.tblTable.getModel();
+            
+            this.origVal = (String) dtm.getValueAt(this.editableRow, this.editableCol);
+            
+        }
         
         
         
@@ -283,11 +426,19 @@ public class Main<T> extends javax.swing.JFrame {
         // lock other rows
         this.editableRow = this.tblTable.getSelectedRow();
         
+        // indicate that you're adding
+        this.isAdding = true;
+        
+        // disable Add Record button
+        cmdAdd.setEnabled(false);
+        
+        // eable Cancel and Update buttons
+        cmdCancel.setEnabled(true);
+        cmdUpdate.setEnabled(true);
         
     }//GEN-LAST:event_cmdAddActionPerformed
 
     private void cmdUpdateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmdUpdateActionPerformed
-        
         // attempt to insert record to database
         DefaultTableModel dtm = (DefaultTableModel)this.tblTable.getModel();
         
@@ -304,7 +455,108 @@ public class Main<T> extends javax.swing.JFrame {
         }
         
         db.insertToTable("student", dv);
+        
+        isAdding = false;
+        
+        // disable update and cancel button
+        this.cmdUpdate.setEnabled(false);
+        this.cmdCancel.setEnabled(false);
     }//GEN-LAST:event_cmdUpdateActionPerformed
+
+    private void tblTablePropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FIRST:event_tblTablePropertyChange
+        
+        this.showInfoMsg("origVal is " + this.origVal + " newVal is " + newVal);
+        
+        if( origVal != null ){
+            
+            DefaultTableModel dtm = (DefaultTableModel) this.tblTable.getModel();
+            
+            newVal = (String) dtm.getValueAt(this.editableRow, this.editableCol);
+            
+        }
+        
+        
+        
+        
+    }//GEN-LAST:event_tblTablePropertyChange
+
+    private void tblTableFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_tblTableFocusLost
+        // TODO add your handling code here:
+        
+    }//GEN-LAST:event_tblTableFocusLost
+
+    private void tblTableFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_tblTableFocusGained
+        // TODO add your handling code here:
+    }//GEN-LAST:event_tblTableFocusGained
+
+    private void cmdCancelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmdCancelActionPerformed
+        if( isAdding == true ){
+            // remove bottom-most row
+            DefaultTableModel dtm = (DefaultTableModel) tblTable.getModel();
+            dtm.removeRow(dtm.getRowCount()-1);
+            
+            editableRow = -1;
+            editableCol = -1;
+            
+            isAdding = false;
+            
+            // hide Cancel and Update buttons
+            cmdUpdate.setEnabled(false);
+            cmdCancel.setEnabled(false);
+            
+            // enable Add Record button
+            cmdAdd.setEnabled(true);
+        }
+    }//GEN-LAST:event_cmdCancelActionPerformed
+
+    private void cmdDelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmdDelActionPerformed
+        // TODO add your handling code here:
+        // check if a row is selected
+        if( editableRow != -1  ){
+            if(JOptionPane.showConfirmDialog(null, "Delete Record?", "App", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION ){
+                DefaultTableModel dtm = (DefaultTableModel) tblTable.getModel();
+                
+                // create filter expression
+                FilterExpression[] fexpr = new FilterExpression[dtm.getColumnCount()];
+                for( int i=0; i<fexpr.length; i++ ){
+                    // get current value col
+                    String val = (String) dtm.getValueAt(editableRow, i);
+                    Field f = table.getField(dtm.getColumnName(i));
+
+                    // check if current field is the one changed so you can use old value
+                    if( i == 0 ){
+
+                        fexpr[i] = new FilterExpression(new FilterTerm( table.getField(dtm.getColumnName(i))), DBRelationalOptr.EQUAL, new FilterTerm(db.toCorrectData(val, f)), null, null);
+                    }
+                    else {
+                        fexpr[i] = new FilterExpression(new FilterTerm(table.getField(dtm.getColumnName(i))), DBRelationalOptr.EQUAL, new FilterTerm(db.toCorrectData(val, f)), DBLogicalOptr.AND, fexpr[i-1]);
+                    }
+                }
+                
+                int res = db.deleteRecords(table, fexpr[fexpr.length-1]);
+                
+                if( res == 0 ){
+                    // delete record from table
+                    dtm.removeRow(editableRow);
+                    
+                    // show success msg
+                    showInfoMsg("Record was successfully deleted!");
+                    
+                    editableCol = -1;
+                    editableRow = -1;
+                }
+                else {
+                    showInfoMsg("An error occured while deleting record!");
+                    
+                    
+                }
+                
+            }
+           
+        }
+        
+        
+    }//GEN-LAST:event_cmdDelActionPerformed
 
     /**
      * @param args the command line arguments
@@ -354,6 +606,8 @@ public class Main<T> extends javax.swing.JFrame {
     private javax.swing.JComboBox<String> cmbDB;
     private javax.swing.JComboBox<String> cmbTables;
     private javax.swing.JButton cmdAdd;
+    private javax.swing.JButton cmdCancel;
+    private javax.swing.JButton cmdDel;
     private javax.swing.JButton cmdUpdate;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;

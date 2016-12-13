@@ -1,3 +1,4 @@
 - No checking yet if field value exceeds field length limit
 - No checking if table exists before creating a new one
 - Create Enum classes for error messages
+- Add checking for field validity (esp. for blanks ones) before inserting
