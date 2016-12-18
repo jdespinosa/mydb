@@ -57,9 +57,9 @@ public class DBTest {
         String tablename = "student";
         Table table = db.getTable(tablename);
         FilterExpression fexpr = new FilterExpression(new FilterTerm(table.getField("id")), DBRelationalOptr.EQUAL, new FilterTerm("001-11"), null, null);
-        FilterExpression fexpr2 = new FilterExpression(new FilterTerm(table.getField("id")), DBRelationalOptr.EQUAL, new FilterTerm("002-22"), DBLogicalOptr.OR, fexpr);
+        // FilterExpression fexpr2 = new FilterExpression(new FilterTerm(table.getField("id")), DBRelationalOptr.EQUAL, new FilterTerm("002-22"), DBLogicalOptr.OR, fexpr);
         
-        int res = db.deleteRecords(table, fexpr2);
+        int res = db.deleteRecords(table, fexpr);
         System.out.println("Res: " + res);
     }
     

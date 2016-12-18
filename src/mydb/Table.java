@@ -173,6 +173,10 @@ public class Table {
            return field.getLength();   // for VARCHAR, base length NOT on DATA TYPE
        }
    }
+   
+   public void finalize() throws Throwable{
+       super.finalize();
+   }
     
     public static void main(String[] args){
         Schema schema = new Schema("c:/mydb/master.schema");

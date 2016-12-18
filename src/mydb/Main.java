@@ -25,13 +25,14 @@ public class Main<T> extends javax.swing.JFrame {
     private Database db;
     private Schema schema;
     private String db_folder_url;
-    private Table table;
+    // private Table table;
     private boolean isInitializing; 
     private int editableRow;
     private int editableCol;
     private String origVal;
     private String newVal;
     private boolean isAdding;   
+    private String tableName;
     
     public Main() {
         initComponents();
@@ -73,6 +74,8 @@ public class Main<T> extends javax.swing.JFrame {
         this.newVal = null;
         
         this.isAdding = false;
+        
+        this.tableName = "";
     }
 
     /**
@@ -252,10 +255,14 @@ public class Main<T> extends javax.swing.JFrame {
         // get selected table name
         String table_name = this.cmbTables.getSelectedItem().toString();
         System.out.println(table_name);
-        this.table = db.getTable(table_name);
+        
+        // save table name
+        this.tableName = table_name;
+        
+        Table table = db.getTable(table_name);
         
         // get the list of fields for this table
-        String[] flds = this.table.getFieldNames();
+        String[] flds = table.getFieldNames();
         
         // show table 
         this.tblTable.setVisible(true);
@@ -271,9 +278,9 @@ public class Main<T> extends javax.swing.JFrame {
         // attemp to get all the records
         Field[] fields = new Field[flds.length];
         for(int i=0; i<flds.length; i++){
-            fields[i] = this.table.getField(i);
+            fields[i] = table.getField(i);
         }
-        Recordset rs = db.getRecords(this.table, fields, null);
+        Recordset rs = db.getRecords(table, fields, null);
         
         // make sure the table is not empty before adding
         if( rs.getRecordCount() > 0  ){ // this could also be if( !rs.isEmpty() )
@@ -444,10 +451,12 @@ public class Main<T> extends javax.swing.JFrame {
         
         DataValue[] dv = new DataValue[tblTable.getColumnCount()];
         
+        Table table = db.getTable(this.tableName);
+        
         int row = this.editableRow;
         for(int c=0; c<tblTable.getColumnCount(); c++){
             String column_name = tblTable.getColumnName(c);
-            Field field = this.table.getField(column_name);
+            Field field = table.getField(column_name);
             System.out.println("Field: " + field.getName() + " T: " + field.getDatatype());
             Object val = db.toCorrectData(dtm.getValueAt(row, c).toString(), field);
             System.out.println("Object: " + val + " col: " + c);
@@ -516,6 +525,9 @@ public class Main<T> extends javax.swing.JFrame {
             if(JOptionPane.showConfirmDialog(null, "Delete Record?", "App", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION ){
                 DefaultTableModel dtm = (DefaultTableModel) tblTable.getModel();
                 
+                // get table
+                Table table = db.getTable(this.tableName);
+                
                 // create filter expression
                 FilterExpression[] fexpr = new FilterExpression[dtm.getColumnCount()];
                 for( int i=0; i<fexpr.length; i++ ){
@@ -529,9 +541,11 @@ public class Main<T> extends javax.swing.JFrame {
                         fexpr[i] = new FilterExpression(new FilterTerm( table.getField(dtm.getColumnName(i))), DBRelationalOptr.EQUAL, new FilterTerm(db.toCorrectData(val, f)), null, null);
                     }
                     else {
+                        
                         fexpr[i] = new FilterExpression(new FilterTerm(table.getField(dtm.getColumnName(i))), DBRelationalOptr.EQUAL, new FilterTerm(db.toCorrectData(val, f)), DBLogicalOptr.AND, fexpr[i-1]);
                     }
                 }
+
                 
                 int res = db.deleteRecords(table, fexpr[fexpr.length-1]);
                 

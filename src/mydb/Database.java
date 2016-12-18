@@ -37,6 +37,8 @@ public class Database<T> {
             
             // get the direcotry name
             this.name = dbdir.getName();
+            
+            
         }
         catch(Exception e){
             throw new Error("Cannot open database directory: " + dburl);
@@ -149,6 +151,85 @@ public class Database<T> {
            }while( fc.position() <= fc.size()-1 );
            
            // close file channel and randomfileaccess 
+           
+           fc.close();
+           aFile.close();
+           
+           fw.flush();
+           fw.close();
+           
+           
+
+            // delete original file
+           boolean delres = file.delete();
+           
+           //System.out.println("Delete file Result: " + delres);
+           
+           // rename temp to table file
+           System.out.println("Rename: " + tmpFile.renameTo(file) );
+        }
+        catch(Exception e){
+            return 3;       
+        }
+        
+        return 0;
+    }
+    
+     public int deleteRecords(String tablename, FilterExpression fexpr){
+         Table table = new Table(this.dburl + "/" + tablename + ".tbl", this.schema);
+         
+        // check if filter expression is valid
+        if( !filterExprValid(table, fexpr) ){
+            return 1;
+        }
+        else if( fexpr == null  ){      // effect will empty the contents of table
+            return 2;                   // do not permit using this method instead, use truncateTable()
+        }
+        
+        int twidth = table.getTableWidth();
+        
+        try{
+           File file = new File(this.dburl + "/" + table.getName() + ".dat");
+           RandomAccessFile aFile = new RandomAccessFile(file, "r");
+           FileChannel fc = aFile.getChannel();
+           
+           // temp file
+           File tmpFile = File.createTempFile(table.getName(), ".tlmp", file.getParentFile());
+           FileWriter fw = new FileWriter(tmpFile, true);
+           
+           // loop thru every record
+           ByteBuffer copy = ByteBuffer.allocate(twidth);
+           int nread;
+           int row = 0;
+           int delCount = 0;
+           String record;
+           
+           do{
+               // empty buffer
+               copy.rewind();
+               
+               // read one row from the data
+               do{
+                   nread = fc.read(copy);
+               }while( nread != -1 && copy.hasRemaining() );
+               
+               record = new String(copy.array());
+               
+               if( !filterRecord(table, record, fexpr) == true ){
+                   System.out.println("HERE");
+                    // write to temp. file
+                   fw.write(record);
+                   
+                   // update deletion counter
+                   delCount++;
+               }
+               
+               row++;                       // update row indicator
+               fc.position(twidth * row);   // use it to update fc position
+               
+           }while( fc.position() <= fc.size()-1 );
+           
+           // close file channel and randomfileaccess 
            fc.close();
            aFile.close();
            
@@ -158,10 +239,10 @@ public class Database<T> {
            // delete original file
            boolean delres = file.delete();
            
-            System.out.println("Delete file Result: " + delres);
+           System.out.println("Delete file Result: " + delres);
            
            // rename temp to table file
-            System.out.println("Rename: " + tmpFile.renameTo(file) );
+           System.out.println("Rename: " + tmpFile.renameTo(file) );
         }
         catch(Exception e){
             return 3;       
