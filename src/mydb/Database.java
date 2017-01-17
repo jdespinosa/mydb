@@ -157,9 +157,7 @@ public class Database<T> {
            
            fw.flush();
            fw.close();
-           
-           
-
+    
             // delete original file
            boolean delres = file.delete();
            
@@ -261,7 +259,6 @@ public class Database<T> {
         }
         
         return -1;
-        
     }
     
     public int createTable(String name, Field[] fields){

@@ -2,3 +2,8 @@
 - No checking if table exists before creating a new one
 - Create Enum classes for error messages
 - Add checking for field validity (esp. for blanks ones) before inserting
+
+NEXT STEP:
+1. Fix deleteRecords() bug in Database Object
+   ERROR: Cannot successfully rename temp. file to be the original
+          after delete process
